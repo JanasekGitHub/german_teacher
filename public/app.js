@@ -121,6 +121,83 @@ function renderLibrary() {
       renderLibrary();
     });
   });
+
+  renderLibrarySidebar();
+}
+
+// ===== LIBRARY SIDEBAR =====
+function renderLibrarySidebar() {
+  const vocabContainer = document.getElementById('lib-sidebar-vocab');
+  const grammarContainer = document.getElementById('lib-sidebar-grammar');
+  const vocabEmpty = document.getElementById('lib-sidebar-vocab-empty');
+  const grammarEmpty = document.getElementById('lib-sidebar-grammar-empty');
+
+  const docIds = Object.keys(state.documents);
+
+  // Gather all vocab and grammar grouped by document
+  let hasVocab = false;
+  let hasGrammar = false;
+  let vocabHtml = '';
+  let grammarHtml = '';
+
+  for (const docId of docIds) {
+    const doc = state.documents[docId];
+    const annotations = state.annotations[docId] || [];
+    const vocabItems = annotations.filter(a => a.type === 'vocab');
+    const grammarItems = annotations.filter(a => a.type === 'grammar');
+
+    if (vocabItems.length > 0) {
+      hasVocab = true;
+      vocabHtml += buildSidebarGroup(doc.title, vocabItems, 'vocab');
+    }
+    if (grammarItems.length > 0) {
+      hasGrammar = true;
+      grammarHtml += buildSidebarGroup(doc.title, grammarItems, 'grammar');
+    }
+  }
+
+  if (hasVocab) {
+    vocabEmpty.classList.add('hidden');
+    vocabContainer.innerHTML = vocabHtml;
+  } else {
+    vocabEmpty.classList.remove('hidden');
+    vocabContainer.innerHTML = '';
+  }
+
+  if (hasGrammar) {
+    grammarEmpty.classList.add('hidden');
+    grammarContainer.innerHTML = grammarHtml;
+  } else {
+    grammarEmpty.classList.remove('hidden');
+    grammarContainer.innerHTML = '';
+  }
+
+  // Toggle collapse/expand
+  document.querySelectorAll('.lib-sidebar-group-header').forEach(header => {
+    header.addEventListener('click', () => {
+      const items = header.nextElementSibling;
+      const chevron = header.querySelector('.chevron');
+      items.classList.toggle('expanded');
+      chevron.classList.toggle('expanded');
+    });
+  });
+}
+
+function buildSidebarGroup(title, items, type) {
+  const itemsHtml = items.map(a =>
+    `<div class="sidebar-item ${type}">
+      <div class="sidebar-item-text">${escapeHtml(a.text)}</div>
+    </div>`
+  ).join('');
+
+  return `<div class="lib-sidebar-group">
+    <div class="lib-sidebar-group-header">
+      <span class="chevron">&#9654;</span>
+      <span class="group-title">${escapeHtml(title)}</span>
+      <span class="group-count">(${items.length})</span>
+    </div>
+    <div class="lib-sidebar-group-items">${itemsHtml}</div>
+  </div>`;
 }
 
 // ===== UPLOAD =====

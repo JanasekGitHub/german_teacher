@@ -28,13 +28,30 @@
 
     <div id="upload-status" class="upload-status hidden"></div>
 
-    <div id="library-list" class="library-list">
-      <!-- populated by JS -->
-    </div>
+    <div class="library-body">
+      <div class="library-main">
+        <div id="library-list" class="library-list">
+          <!-- populated by JS -->
+        </div>
 
-    <div id="library-empty" class="empty-state hidden">
-      <p>No documents yet.</p>
-      <p>Upload a German PDF or .txt file to get started.</p>
+        <div id="library-empty" class="empty-state hidden">
+          <p>No documents yet.</p>
+          <p>Upload a German PDF or .txt file to get started.</p>
+        </div>
+      </div>
+
+      <aside id="library-sidebar" class="library-sidebar">
+        <div class="sidebar-section">
+          <h4><span class="dot vocab-dot"></span> All Vocabulary</h4>
+          <div id="lib-sidebar-vocab"></div>
+          <div id="lib-sidebar-vocab-empty" class="sidebar-empty">No words marked yet</div>
+        </div>
+        <div class="sidebar-section">
+          <h4><span class="dot grammar-dot"></span> All Grammar</h4>
+          <div id="lib-sidebar-grammar"></div>
+          <div id="lib-sidebar-grammar-empty" class="sidebar-empty">No grammar marked yet</div>
+        </div>
+      </aside>
     </div>
   </div>
 
