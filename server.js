@@ -225,5 +225,5 @@ app.get('/api/admin/files', requireAuth, (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`German Teacher v1.4 running at http://localhost:${PORT}`);
+  console.log(`German Teacher v1.5 running at http://localhost:${PORT}`);
 });
