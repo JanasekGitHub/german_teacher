@@ -3,8 +3,12 @@
   "version": "1.0.0",
   "description": "German language learning reader",
   "main": "server.js",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "build": "echo 'No build step required'"
   },
   "dependencies": {
     "express": "^4.18.2",
