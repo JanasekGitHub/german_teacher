@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>German Reader</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- LIBRARY VIEW -->
+  <div id="view-library" class="view">
+    <header class="lib-header">
+      <h1>German Reader</h1>
+      <div class="lib-header-actions">
+        <button id="btn-help-library" class="btn btn-ghost" title="How to use">Help</button>
+        <button id="btn-settings" class="btn btn-ghost" title="Settings">Settings</button>
+        <label class="btn btn-primary upload-label">
+          Upload Document
+          <input type="file" id="file-input" accept=".pdf,.txt" hidden>
+        </label>
+      </div>
+    </header>
+
+    <div id="upload-status" class="upload-status hidden"></div>
+
+    <div id="library-list" class="library-list">
+      <!-- populated by JS -->
+    </div>
+
+    <div id="library-empty" class="empty-state hidden">
+      <p>No documents yet.</p>
+      <p>Upload a German PDF or .txt file to get started.</p>
+    </div>
+  </div>
+
+  <!-- READER VIEW -->
+  <div id="view-reader" class="view hidden">
+    <div class="reader-toolbar">
+      <button id="btn-back-library" class="btn btn-ghost">← Library</button>
+      <span id="reader-title" class="reader-title"></span>
+      <div class="toolbar-controls">
+        <button id="btn-font-down" class="btn btn-ghost font-btn" title="Decrease font size">A−</button>
+        <button id="btn-font-up" class="btn btn-ghost font-btn" title="Increase font size">A+</button>
+        <button id="btn-help" class="btn btn-ghost" title="How to use">Help</button>
+        <button id="btn-settings-reader" class="btn btn-ghost" title="Prompt settings">Settings</button>
+        <button id="btn-go-export" class="btn btn-primary">Export →</button>
+      </div>
+    </div>
+    <div class="reader-body">
+      <div id="reader-scroll" class="reader-scroll">
+        <div id="reader-content" class="reader-content"></div>
+      </div>
+      <aside id="reader-sidebar" class="reader-sidebar">
+        <div class="sidebar-section">
+          <h4><span class="dot vocab-dot"></span> Vocabulary</h4>
+          <ul id="sidebar-vocab-list" class="sidebar-list"></ul>
+          <div id="sidebar-vocab-empty" class="sidebar-empty">No words marked yet</div>
+        </div>
+        <div class="sidebar-section">
+          <h4><span class="dot grammar-dot"></span> Grammar</h4>
+          <ul id="sidebar-grammar-list" class="sidebar-list"></ul>
+          <div id="sidebar-grammar-empty" class="sidebar-empty">No grammar marked yet</div>
+        </div>
+      </aside>
+    </div>
+    <div class="reader-status">
+      <span id="status-doc-info"></span>
+      <span id="status-annotation-count"></span>
+    </div>
+  </div>
+
+  <!-- EXPORT VIEW -->
+  <div id="view-export" class="view hidden">
+    <div class="export-toolbar">
+      <button id="btn-back-reader" class="btn btn-ghost">← Back to Reader</button>
+      <h2 id="export-title" class="export-doc-title"></h2>
+    </div>
+    <div class="export-panels">
+      <!-- Vocabulary panel -->
+      <div class="export-panel" id="panel-vocab">
+        <div class="export-panel-header">
+          <h3><span class="dot vocab-dot"></span> Vocabulary Prompt</h3>
+          <div class="export-panel-actions">
+            <button id="btn-copy-vocab" class="btn btn-primary">Copy</button>
+            <button id="btn-gemini-vocab" class="btn btn-primary">Open in Gemini</button>
+            <button id="btn-download-vocab" class="btn btn-ghost">Download .txt</button>
+          </div>
+        </div>
+        <div id="vocab-count" class="annotation-count"></div>
+        <pre id="vocab-prompt" class="prompt-preview"></pre>
+        <div id="vocab-empty" class="empty-state hidden">No vocabulary annotations yet for this document.</div>
+      </div>
+
+      <!-- Grammar panel -->
+      <div class="export-panel" id="panel-grammar">
+        <div class="export-panel-header">
+          <h3><span class="dot grammar-dot"></span> Grammar Prompt</h3>
+          <div class="export-panel-actions">
+            <button id="btn-copy-grammar" class="btn btn-primary">Copy</button>
+            <button id="btn-gemini-grammar" class="btn btn-primary">Open in Gemini</button>
+            <button id="btn-download-grammar" class="btn btn-ghost">Download .txt</button>
+          </div>
+        </div>
+        <div id="grammar-count" class="annotation-count"></div>
+        <pre id="grammar-prompt" class="prompt-preview"></pre>
+        <div id="grammar-empty" class="empty-state hidden">No grammar annotations yet for this document.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SETTINGS VIEW -->
+  <div id="view-settings" class="view hidden">
+    <div class="settings-toolbar">
+      <button id="btn-back-from-settings" class="btn btn-ghost">← Library</button>
+      <h2 class="settings-title">Prompt Settings</h2>
+    </div>
+    <div class="settings-content">
+      <p class="settings-hint">Edit the prompt templates below. Use <code>{items}</code> as a placeholder — it will be replaced with your annotated words or grammar structures when exporting.</p>
+
+      <div class="settings-field">
+        <label for="setting-vocab-template"><span class="dot vocab-dot"></span> Vocabulary Prompt Template</label>
+        <textarea id="setting-vocab-template" rows="12"></textarea>
+      </div>
+
+      <div class="settings-field">
+        <label for="setting-grammar-template"><span class="dot grammar-dot"></span> Grammar Prompt Template</label>
+        <textarea id="setting-grammar-template" rows="12"></textarea>
+      </div>
+
+      <div class="settings-actions">
+        <button id="btn-save-settings" class="btn btn-primary">Save Settings</button>
+        <button id="btn-reset-settings" class="btn btn-ghost">Reset to Defaults</button>
+        <span id="settings-status" class="settings-status"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right-click popover for removing annotations -->
+  <div id="annotation-popover" class="annotation-popover hidden">
+    <button id="btn-remove-annotation">Remove annotation</button>
+  </div>
+
+  <!-- HELP MODAL -->
+  <div id="help-modal" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>How to Use German Reader</h2>
+        <button id="btn-close-help" class="btn btn-ghost modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <h3>Reading</h3>
+        <ul>
+          <li>Upload a German PDF or .txt file from the Library.</li>
+          <li>Click a document to open it in the reader.</li>
+          <li>Use <strong>A−</strong> / <strong>A+</strong> to adjust font size.</li>
+          <li>Your reading position is saved automatically.</li>
+        </ul>
+
+        <h3>Marking Vocabulary</h3>
+        <ul>
+          <li><strong>Double-click</strong> a word to mark it as unknown vocabulary (yellow highlight).</li>
+        </ul>
+
+        <h3>Marking Grammar</h3>
+        <ul>
+          <li><strong>Select</strong> a phrase or sentence by dragging, then <strong>right-click</strong> to mark it as a grammar structure (blue highlight).</li>
+        </ul>
+
+        <h3>Removing Annotations</h3>
+        <ul>
+          <li><strong>Right-click</strong> on any highlighted word or phrase to remove it.</li>
+        </ul>
+
+        <h3>Exporting Prompts</h3>
+        <ul>
+          <li>Click <strong>Export</strong> to generate AI prompts for your vocabulary and grammar.</li>
+          <li>Copy the prompt and paste it into Gemini (or any AI) to study.</li>
+          <li>The vocabulary prompt teaches you words with meaning, examples, and mnemonics.</li>
+          <li>The grammar prompt explains the structure and gives you translation exercises.</li>
+        </ul>
+
+        <h3>Settings</h3>
+        <ul>
+          <li>Click <strong>Settings</strong> to customize the AI prompt templates.</li>
+          <li>Use <code>{items}</code> as a placeholder for your annotated items.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
