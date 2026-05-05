@@ -1,5 +1,7 @@
 node_modules
 uploads
 data.json
+data/
 .claude/
 ssh.key
+dev.bat
