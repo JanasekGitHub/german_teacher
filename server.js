@@ -193,6 +193,20 @@ app.delete('/api/document/:docId', requireAuth, (req, res) => {
   }
 });
 
+// Admin: list user data files on the volume
+app.get('/api/admin/files', requireAuth, (req, res) => {
+  try {
+    const files = fs.readdirSync(DATA_DIR);
+    const info = files.map(f => {
+      const stat = fs.statSync(path.join(DATA_DIR, f));
+      return { name: f, size: stat.size, modified: stat.mtime };
+    });
+    res.json({ dataDir: DATA_DIR, files: info });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`German Teacher running at http://localhost:${PORT}`);
 });
