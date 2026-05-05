@@ -28,10 +28,13 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
+// Trust Railway's proxy so req.protocol is 'https'
+app.set('trust proxy', 1);
+
 passport.serializeUser((user, done) => done(null, user));
 passport.deserializeUser((user, done) => done(null, user));
 
-const callbackURL = process.env.GOOGLE_CALLBACK_URL || '/auth/google/callback';
+const callbackURL = process.env.GOOGLE_CALLBACK_URL || 'https://germanteacher-production.up.railway.app/auth/google/callback';
 
 passport.use(new GoogleStrategy({
   clientID: process.env.GOOGLE_CLIENT_ID,
