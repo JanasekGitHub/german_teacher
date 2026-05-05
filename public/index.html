@@ -65,7 +65,7 @@
         <button id="btn-font-up" class="btn btn-ghost font-btn" title="Increase font size">A+</button>
         <button id="btn-help" class="btn btn-ghost" title="How to use">Help</button>
         <button id="btn-settings-reader" class="btn btn-ghost" title="Prompt settings">Settings</button>
-        <button id="btn-go-export" class="btn btn-primary">Export →</button>
+        <button id="btn-go-export" class="btn btn-primary">Learn in Gemini →</button>
       </div>
     </div>
     <div class="reader-body">
@@ -103,13 +103,11 @@
         <div class="export-panel-header">
           <h3><span class="dot vocab-dot"></span> Vocabulary Prompt</h3>
           <div class="export-panel-actions">
-            <button id="btn-copy-vocab" class="btn btn-primary">Copy</button>
             <button id="btn-gemini-vocab" class="btn btn-primary">Open in Gemini</button>
-            <button id="btn-download-vocab" class="btn btn-ghost">Download .txt</button>
           </div>
         </div>
         <div id="vocab-count" class="annotation-count"></div>
-        <pre id="vocab-prompt" class="prompt-preview"></pre>
+        <textarea id="vocab-prompt" class="prompt-editor" rows="20"></textarea>
         <div id="vocab-empty" class="empty-state hidden">No vocabulary annotations yet for this document.</div>
       </div>
 
@@ -118,13 +116,11 @@
         <div class="export-panel-header">
           <h3><span class="dot grammar-dot"></span> Grammar Prompt</h3>
           <div class="export-panel-actions">
-            <button id="btn-copy-grammar" class="btn btn-primary">Copy</button>
             <button id="btn-gemini-grammar" class="btn btn-primary">Open in Gemini</button>
-            <button id="btn-download-grammar" class="btn btn-ghost">Download .txt</button>
           </div>
         </div>
         <div id="grammar-count" class="annotation-count"></div>
-        <pre id="grammar-prompt" class="prompt-preview"></pre>
+        <textarea id="grammar-prompt" class="prompt-editor" rows="20"></textarea>
         <div id="grammar-empty" class="empty-state hidden">No grammar annotations yet for this document.</div>
       </div>
     </div>

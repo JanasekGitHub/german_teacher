@@ -636,79 +636,43 @@ function renderExport() {
   // Vocab panel
   document.getElementById('vocab-count').textContent = `${vocabAnnotations.length} word${vocabAnnotations.length !== 1 ? 's' : ''} marked`;
   if (vocabPrompt) {
-    document.getElementById('vocab-prompt').textContent = vocabPrompt;
+    document.getElementById('vocab-prompt').value = vocabPrompt;
     document.getElementById('vocab-prompt').classList.remove('hidden');
     document.getElementById('vocab-empty').classList.add('hidden');
-    document.getElementById('btn-copy-vocab').disabled = false;
     document.getElementById('btn-gemini-vocab').disabled = false;
-    document.getElementById('btn-download-vocab').disabled = false;
   } else {
     document.getElementById('vocab-prompt').classList.add('hidden');
     document.getElementById('vocab-empty').classList.remove('hidden');
-    document.getElementById('btn-copy-vocab').disabled = true;
     document.getElementById('btn-gemini-vocab').disabled = true;
-    document.getElementById('btn-download-vocab').disabled = true;
   }
 
   // Grammar panel
   document.getElementById('grammar-count').textContent = `${grammarAnnotations.length} structure${grammarAnnotations.length !== 1 ? 's' : ''} marked`;
   if (grammarPrompt) {
-    document.getElementById('grammar-prompt').textContent = grammarPrompt;
+    document.getElementById('grammar-prompt').value = grammarPrompt;
     document.getElementById('grammar-prompt').classList.remove('hidden');
     document.getElementById('grammar-empty').classList.add('hidden');
-    document.getElementById('btn-copy-grammar').disabled = false;
     document.getElementById('btn-gemini-grammar').disabled = false;
-    document.getElementById('btn-download-grammar').disabled = false;
   } else {
     document.getElementById('grammar-prompt').classList.add('hidden');
     document.getElementById('grammar-empty').classList.remove('hidden');
-    document.getElementById('btn-copy-grammar').disabled = true;
     document.getElementById('btn-gemini-grammar').disabled = true;
-    document.getElementById('btn-download-grammar').disabled = true;
   }
 }
 
-// Copy buttons
-document.getElementById('btn-copy-vocab').addEventListener('click', async () => {
-  const prompt = buildVocabPrompt(currentDocId);
-  if (!prompt) return;
-  await navigator.clipboard.writeText(prompt);
-  flashButton('btn-copy-vocab', 'Copied!');
-});
-
-document.getElementById('btn-copy-grammar').addEventListener('click', async () => {
-  const prompt = buildGrammarPrompt(currentDocId);
-  if (!prompt) return;
-  await navigator.clipboard.writeText(prompt);
-  flashButton('btn-copy-grammar', 'Copied!');
-});
-
-// Gemini buttons — copy to clipboard then open Gemini
+// Gemini buttons — copy textarea content to clipboard then open Gemini
 document.getElementById('btn-gemini-vocab').addEventListener('click', async () => {
-  const prompt = buildVocabPrompt(currentDocId);
+  const prompt = document.getElementById('vocab-prompt').value;
   if (!prompt) return;
   await navigator.clipboard.writeText(prompt);
   window.open('https://gemini.google.com/app', '_blank');
 });
 
 document.getElementById('btn-gemini-grammar').addEventListener('click', async () => {
-  const prompt = buildGrammarPrompt(currentDocId);
+  const prompt = document.getElementById('grammar-prompt').value;
   if (!prompt) return;
   await navigator.clipboard.writeText(prompt);
   window.open('https://gemini.google.com/app', '_blank');
-});
-
-// Download buttons
-document.getElementById('btn-download-vocab').addEventListener('click', () => {
-  const prompt = buildVocabPrompt(currentDocId);
-  if (!prompt) return;
-  downloadText(prompt, 'vocabulary-prompt.txt');
-});
-
-document.getElementById('btn-download-grammar').addEventListener('click', () => {
-  const prompt = buildGrammarPrompt(currentDocId);
-  if (!prompt) return;
-  downloadText(prompt, 'grammar-prompt.txt');
 });
 
 // ===== UTILITIES =====

@@ -544,6 +544,24 @@ body.annotating .reader-content { cursor: crosshair; }
   background: var(--surface);
 }
 
+.prompt-editor {
+  width: 100%;
+  padding: 16px 18px;
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  border: none;
+  border-top: 1px solid var(--border);
+  color: var(--text);
+  background: var(--surface);
+  resize: vertical;
+  min-height: 200px;
+}
+.prompt-editor:focus {
+  outline: none;
+  background: #fffdf8;
+}
+
 /* ===== SETTINGS VIEW ===== */
 .settings-toolbar {
   display: flex;
