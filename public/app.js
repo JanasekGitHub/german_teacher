@@ -372,15 +372,19 @@ document.getElementById('reader-content').addEventListener('contextmenu', (e) =>
 
   e.preventDefault();
 
-  const offsets = selectionToOffsets(selection, content, rawText);
+  let offsets = selectionToOffsets(selection, content, rawText);
   if (!offsets) { selection.removeAllRanges(); return; }
+
+  // Expand selection to full word boundaries
+  offsets = expandToWordBoundaries(rawText, offsets.startOffset, offsets.endOffset);
+  const expandedText = rawText.slice(offsets.startOffset, offsets.endOffset).trim();
 
   const sentence = extractSentence(rawText, offsets.startOffset, offsets.endOffset);
 
   const annotation = {
     id: crypto.randomUUID(),
     type: 'grammar',
-    text: selectedText,
+    text: expandedText,
     sentence,
     startOffset: offsets.startOffset,
     endOffset: offsets.endOffset,
@@ -423,6 +427,14 @@ function selectionToOffsets(selection, contentEl, rawText) {
   endOffset = Math.max(0, Math.min(endOffset, rawText.length));
   if (startOffset >= endOffset) return null;
   return { startOffset, endOffset };
+}
+
+function expandToWordBoundaries(text, start, end) {
+  // Expand start to the left until we hit a space/newline or beginning of text
+  while (start > 0 && !/\s/.test(text[start - 1])) start--;
+  // Expand end to the right until we hit a space/newline or end of text
+  while (end < text.length && !/\s/.test(text[end])) end++;
+  return { startOffset: start, endOffset: end };
 }
 
 function extractSentence(text, start, end) {
