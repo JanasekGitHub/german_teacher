@@ -1,4 +1,7 @@
 const express = require('express');
+const session = require('express-session');
+const passport = require('passport');
+const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const multer = require('multer');
 const pdfParse = require('pdf-parse');
 const fs = require('fs');
@@ -7,24 +10,87 @@ const crypto = require('crypto');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const DATA_DIR = process.env.DATA_DIR || __dirname;
-const DATA_FILE = path.join(DATA_DIR, 'data.json');
+const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
 const UPLOADS_DIR = path.join(__dirname, 'uploads');
 
-// Ensure uploads directory exists
+// Ensure directories exist
+if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR);
 
-// Ensure data.json exists with initial structure
-if (!fs.existsSync(DATA_FILE)) {
-  fs.writeFileSync(DATA_FILE, JSON.stringify({ documents: {}, annotations: {}, positions: {}, settings: {} }, null, 2));
+// ===== SESSION + PASSPORT =====
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'dev-secret-change-me',
+  resave: false,
+  saveUninitialized: false,
+  cookie: { maxAge: 30 * 24 * 60 * 60 * 1000 } // 30 days
+}));
+
+app.use(passport.initialize());
+app.use(passport.session());
+
+passport.serializeUser((user, done) => done(null, user));
+passport.deserializeUser((user, done) => done(null, user));
+
+const callbackURL = process.env.GOOGLE_CALLBACK_URL || '/auth/google/callback';
+
+passport.use(new GoogleStrategy({
+  clientID: process.env.GOOGLE_CLIENT_ID,
+  clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+  callbackURL
+}, (accessToken, refreshToken, profile, done) => {
+  const user = {
+    id: profile.id,
+    name: profile.displayName,
+    email: profile.emails?.[0]?.value || ''
+  };
+  done(null, user);
+}));
+
+// ===== AUTH ROUTES =====
+app.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+
+app.get('/auth/google/callback',
+  passport.authenticate('google', { failureRedirect: '/login.html' }),
+  (req, res) => res.redirect('/')
+);
+
+app.get('/auth/logout', (req, res) => {
+  req.logout(() => {
+    res.redirect('/login.html');
+  });
+});
+
+// ===== AUTH MIDDLEWARE =====
+function requireAuth(req, res, next) {
+  if (req.isAuthenticated()) return next();
+  res.status(401).json({ error: 'Not authenticated' });
 }
 
-// Multer config — accept only PDF and plain text
+// ===== PER-USER DATA =====
+function getUserDataFile(userId) {
+  return path.join(DATA_DIR, `user_${userId}.json`);
+}
+
+function getUserData(userId) {
+  const file = getUserDataFile(userId);
+  if (!fs.existsSync(file)) {
+    const initial = { documents: {}, annotations: {}, positions: {}, settings: {} };
+    fs.writeFileSync(file, JSON.stringify(initial, null, 2));
+    return initial;
+  }
+  return JSON.parse(fs.readFileSync(file, 'utf8'));
+}
+
+function saveUserData(userId, data) {
+  const file = getUserDataFile(userId);
+  fs.writeFileSync(file, JSON.stringify(data, null, 2));
+}
+
+// ===== MULTER =====
 const upload = multer({
   dest: UPLOADS_DIR,
   fileFilter: (req, file, cb) => {
     const allowed = ['application/pdf', 'text/plain'];
-    // Some systems send .txt files with a different mime type
     const ext = path.extname(file.originalname).toLowerCase();
     if (allowed.includes(file.mimetype) || ext === '.txt' || ext === '.pdf') {
       cb(null, true);
@@ -34,39 +100,43 @@ const upload = multer({
   }
 });
 
+// ===== MIDDLEWARE =====
 app.use(express.json({ limit: '50mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Health check
+// ===== PUBLIC ROUTES =====
 app.get('/api/ping', (req, res) => res.json({ ok: true }));
 
-// GET full data
-app.get('/api/data', (req, res) => {
+app.get('/api/user', (req, res) => {
+  if (!req.isAuthenticated()) return res.status(401).json({ error: 'Not authenticated' });
+  res.json({ id: req.user.id, name: req.user.name, email: req.user.email });
+});
+
+// ===== PROTECTED ROUTES =====
+app.get('/api/data', requireAuth, (req, res) => {
   try {
-    const data = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
+    const data = getUserData(req.user.id);
     res.json(data);
   } catch (err) {
     res.status(500).json({ error: 'Could not read data file' });
   }
 });
 
-// PUT full data (replace)
-app.put('/api/data', (req, res) => {
+app.put('/api/data', requireAuth, (req, res) => {
   try {
     const body = req.body;
     if (!body || typeof body !== 'object' || !body.documents || !body.annotations || !body.positions) {
       return res.status(400).json({ error: 'Invalid data structure' });
     }
     if (!body.settings) body.settings = {};
-    fs.writeFileSync(DATA_FILE, JSON.stringify(body, null, 2));
+    saveUserData(req.user.id, body);
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: 'Could not write data file' });
   }
 });
 
-// POST upload — parse file and store text in data.json
-app.post('/api/upload', upload.single('file'), async (req, res) => {
+app.post('/api/upload', requireAuth, upload.single('file'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
 
   const filePath = req.file.path;
@@ -91,32 +161,29 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
     return res.status(422).json({ error: 'Could not parse file: ' + err.message });
   }
 
-  // Delete temp file
   if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
 
-  // Store in data.json
   const docId = crypto.randomUUID();
-  const data = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
+  const data = getUserData(req.user.id);
   data.documents[docId] = {
     title: originalName,
     text: text,
     uploadedAt: Date.now()
   };
   if (!data.annotations[docId]) data.annotations[docId] = [];
-  fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
+  saveUserData(req.user.id, data);
 
   res.json({ docId, title: originalName, charCount: text.length });
 });
 
-// Delete a document
-app.delete('/api/document/:docId', (req, res) => {
+app.delete('/api/document/:docId', requireAuth, (req, res) => {
   try {
     const { docId } = req.params;
-    const data = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
+    const data = getUserData(req.user.id);
     delete data.documents[docId];
     delete data.annotations[docId];
     delete data.positions[docId];
-    fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
+    saveUserData(req.user.id, data);
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: 'Could not delete document' });

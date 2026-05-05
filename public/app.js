@@ -691,6 +691,15 @@ function closeHelp() {
 
 // ===== INIT =====
 (async () => {
+  // Check if user is authenticated
+  const userRes = await fetch('/api/user');
+  if (userRes.status === 401) {
+    window.location.href = '/login.html';
+    return;
+  }
+  const user = await userRes.json();
+  document.getElementById('user-name').textContent = user.name;
+
   await loadData();
   renderLibrary();
   showView('library');
