@@ -42,6 +42,10 @@ function getGrammarTemplate() {
 // ===== DATA LAYER =====
 async function loadData() {
   const res = await fetch('/api/data');
+  if (!res.ok) {
+    if (res.status === 401) { window.location.href = '/login.html'; return; }
+    return;
+  }
   const json = await res.json();
   state.documents = json.documents || {};
   state.annotations = json.annotations || {};
@@ -50,11 +54,12 @@ async function loadData() {
 }
 
 async function saveData() {
-  await fetch('/api/data', {
+  const res = await fetch('/api/data', {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(state)
   });
+  if (res.status === 401) { window.location.href = '/login.html'; }
 }
 
 // ===== VIEW SWITCHING =====

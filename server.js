@@ -17,6 +17,13 @@ const UPLOADS_DIR = path.join(__dirname, 'uploads');
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR);
 
+// Log volume contents at startup
+console.log(`DATA_DIR: ${DATA_DIR}`);
+console.log(`Files in DATA_DIR:`, fs.readdirSync(DATA_DIR).map(f => {
+  const stat = fs.statSync(path.join(DATA_DIR, f));
+  return `${f} (${stat.size} bytes)`;
+}));
+
 // ===== SESSION + PASSPORT =====
 app.use(session({
   secret: process.env.SESSION_SECRET || 'dev-secret-change-me',
@@ -132,6 +139,16 @@ app.put('/api/data', requireAuth, (req, res) => {
       return res.status(400).json({ error: 'Invalid data structure' });
     }
     if (!body.settings) body.settings = {};
+
+    // Safety: don't overwrite existing data with empty state
+    const existing = getUserData(req.user.id);
+    const existingDocCount = Object.keys(existing.documents).length;
+    const incomingDocCount = Object.keys(body.documents).length;
+    if (existingDocCount > 0 && incomingDocCount === 0) {
+      console.log(`WARNING: Blocked overwrite of ${existingDocCount} docs with empty state for user ${req.user.id}`);
+      return res.status(409).json({ error: 'Refusing to overwrite existing data with empty state' });
+    }
+
     saveUserData(req.user.id, body);
     res.json({ ok: true });
   } catch (err) {
