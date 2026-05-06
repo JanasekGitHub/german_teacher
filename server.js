@@ -196,6 +196,25 @@ app.post('/api/upload', requireAuth, upload.single('file'), async (req, res) => 
   res.json({ docId, title: originalName, charCount: text.length });
 });
 
+// POST paste — save pasted text as a document
+app.post('/api/paste', requireAuth, (req, res) => {
+  const { title, text } = req.body;
+  if (!text || !text.trim()) return res.status(400).json({ error: 'No text provided' });
+  const docTitle = (title && title.trim()) || 'Untitled note';
+
+  const docId = crypto.randomUUID();
+  const data = getUserData(req.user.id);
+  data.documents[docId] = {
+    title: docTitle,
+    text: text,
+    uploadedAt: Date.now()
+  };
+  if (!data.annotations[docId]) data.annotations[docId] = [];
+  saveUserData(req.user.id, data);
+
+  res.json({ docId, title: docTitle, charCount: text.length });
+});
+
 app.delete('/api/document/:docId', requireAuth, (req, res) => {
   try {
     const { docId } = req.params;

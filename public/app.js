@@ -732,6 +732,43 @@ document.getElementById('btn-reset-settings').addEventListener('click', () => {
   document.getElementById('settings-status').textContent = 'Reset to defaults (click Save to apply)';
 });
 
+// ===== PASTE TEXT =====
+document.getElementById('btn-paste-text').addEventListener('click', () => {
+  document.getElementById('paste-title').value = '';
+  document.getElementById('paste-content').value = '';
+  document.getElementById('paste-modal').classList.remove('hidden');
+  document.getElementById('paste-content').focus();
+});
+
+document.getElementById('btn-close-paste').addEventListener('click', closePasteModal);
+document.getElementById('btn-cancel-paste').addEventListener('click', closePasteModal);
+document.getElementById('paste-modal').addEventListener('click', (e) => {
+  if (e.target === e.currentTarget) closePasteModal();
+});
+
+function closePasteModal() {
+  document.getElementById('paste-modal').classList.add('hidden');
+}
+
+document.getElementById('btn-save-paste').addEventListener('click', async () => {
+  const title = document.getElementById('paste-title').value.trim();
+  const text = document.getElementById('paste-content').value;
+  if (!text.trim()) return;
+
+  const res = await fetch('/api/paste', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ title, text })
+  });
+  if (res.status === 401) { window.location.href = '/login.html'; return; }
+  const json = await res.json();
+  if (!res.ok) { alert(json.error || 'Failed to save'); return; }
+
+  closePasteModal();
+  await loadData();
+  renderLibrary();
+});
+
 // ===== HELP MODAL =====
 document.getElementById('btn-help-library').addEventListener('click', openHelp);
 document.getElementById('btn-help').addEventListener('click', openHelp);
