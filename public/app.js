@@ -753,7 +753,7 @@ function closePasteModal() {
 document.getElementById('btn-save-paste').addEventListener('click', async () => {
   const title = document.getElementById('paste-title').value.trim();
   const text = document.getElementById('paste-content').value;
-  if (!text.trim()) return;
+  if (!text.trim()) { alert('Please paste some text first.'); return; }
 
   const res = await fetch('/api/paste', {
     method: 'POST',
